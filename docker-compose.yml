@@ -1,0 +1,35 @@
+networks:
+  meadows:
+    driver: bridge
+  broker:
+    external: true
+    name: broker
+
+services:
+  meadows-web:
+    build: .
+    image: meadows-web:latest
+    restart: unless-stopped
+    environment:
+      - MEADOWS_WEB_HOST=${MEADOWS_WEB_HOST:-0.0.0.0}
+      - MEADOWS_WEB_PORT=${MEADOWS_WEB_PORT:-8081}
+      - MEADOWS_SERVER_URL=${MEADOWS_SERVER_URL:-http://localhost:8080}
+      - MEADOWS_SYSTEM_NAME=${MEADOWS_SYSTEM_NAME:-MEADOWS Chat}
+      - PROJECT=${PROJECT:-meadows}
+      - HOSTINGDOMAIN=${HOSTINGDOMAIN:-localhost}
+    networks:
+      - meadows
+      - broker
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.rule=Host(`chat.${HOSTINGDOMAIN:-localhost}`)"
+      - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.tls=true"
+      - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.entrypoints=web-secured"
+      - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${PROJECT:-meadows}-meadows-web.loadbalancer.server.port=${MEADOWS_WEB_PORT:-8081}"
+      - "traefik.docker.network=broker"

@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<!--
+  BUSINESS RULE (MEADOWS §2 line 40): this page is the Socket.IO CLIENT, served
+  as a dumb static file by meadows-web. The browser opens its own Socket.IO
+  connection straight to meadows-server ({{ MEADOWS_SERVER_URL }}); this Python
+  webserver never touches the socket. Event names come from the single source of
+  truth (meadows.protocol.EventName) injected below as window.MEADOWS_PROTOCOL —
+  no string literals for protocol events in JS (MEADOWS §1 line 11: the monolith
+  hid the protocol in conventions; here it is explicit).
+
+  Minimal by design (MEADOWS §2 line 40: "zo eenvoudig als de huidige webchat/"):
+  connect, authenticate, send, receive. No reactions, no forms, no patterns.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="meadows-hash" content="{{ MEADOWS_CLIENT_HASH }}">
+  <title>{{ MEADOWS_SYSTEM_NAME }}</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; }
+    header { padding: .6rem 1rem; background: #1f2937; color: #fff; }
+    #auth { padding: .5rem 1rem; background: #f3f4f6; display: flex; gap: .5rem; }
+    #auth input { flex: 1; }
+    #messages { flex: 1; overflow-y: auto; padding: 1rem; }
+    .msg { margin: .25rem 0; }
+    .msg .who { font-weight: 600; margin-right: .4rem; }
+    .msg.system { color: #6b7280; font-style: italic; }
+    #composer { display: flex; gap: .5rem; padding: .5rem 1rem; border-top: 1px solid #d1d5db; }
+    #composer input { flex: 1; }
+    button { cursor: pointer; }
+  </style>
+</head>
+<body>
+  <header>{{ MEADOWS_SYSTEM_NAME }}</header>
+
+  <div id="auth">
+    <input id="token" type="password" placeholder="Paste a JWT token (dev only)" autocomplete="off">
+    <button id="connect">Connect</button>
+    <button id="disconnect" disabled>Disconnect</button>
+    <span id="status">disconnected</span>
+  </div>
+
+  <div id="messages"></div>
+
+  <div id="composer">
+    <input id="text" type="text" placeholder="Type a message and press Enter" autocomplete="off" disabled>
+    <button id="send" disabled>Send</button>
+  </div>
+
+  <!--
+    BUSINESS RULE: protocol constants injected by build.py from
+    meadows.protocol.EventName (single source of truth). JSON is a valid JS
+    object literal, so this assignment is safe. {{ MEADOWS_PROTOCOL }} is
+    replaced at build time; the browser references window.MEADOWS_PROTOCOL.*
+    instead of hardcoding event-name strings.
+  -->
+  <script>
+    window.MEADOWS_PROTOCOL = {{ MEADOWS_PROTOCOL }};
+    window.MEADOWS_SERVER_URL = "{{ MEADOWS_SERVER_URL }}";
+  </script>
+
+  <!-- Socket.IO client from CDN (the browser is the client, not this webserver). -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-...meadows" crossorigin="anonymous"></script>
+  <script>
+    const P = window.MEADOWS_PROTOCOL;
+    const NAMESPACE = "/chat";
+    let socket = null;
+
+    const $ = (id) => document.getElementById(id);
+    const status = (s) => { $("status").textContent = s; };
+
+    function addMessage(who, text, cls) {
+      const el = document.createElement("div");
+      el.className = "msg" + (cls ? " " + cls : "");
+      const w = document.createElement("span");
+      w.className = "who";
+      w.textContent = who;
+      el.appendChild(w);
+      el.appendChild(document.createTextNode(text));
+      $("messages").appendChild(el);
+      $("messages").scrollTop = $("messages").scrollHeight;
+    }
+
+    function setConnected(on) {
+      $("connect").disabled = on;
+      $("disconnect").disabled = !on;
+      $("text").disabled = !on;
+      $("send").disabled = !on;
+    }
+
+    function connect() {
+      const token = $("token").value.trim();
+      if (!token) { alert("Paste a JWT first (dev only)."); return; }
+      // BUSINESS RULE: the browser connects to meadows-server, NOT to this webserver.
+      socket = io(window.MEADOWS_SERVER_URL + NAMESPACE, { transports: ["websocket"] });
+
+      socket.on("connect", () => {
+        status("connected — authenticating");
+        // Send authenticate with the pasted JWT (protocol event name from EventName).
+        socket.emit(P.AUTHENTICATE, { token });
+      });
+
+      socket.on(P.AUTHENTICATED, () => {
+        status("authenticated");
+        setConnected(true);
+        addMessage("system", "authenticated", "system");
+      });
+
+      socket.on(P.AUTH_ERROR, (err) => {
+        status("auth error");
+        addMessage("system", "auth error: " + JSON.stringify(err), "system");
+      });
+
+      // Listen for chat messages from other participants.
+      socket.on(P.MESSAGE, (msg) => {
+        const who = (msg && (msg.user_id || msg.from)) || "unknown";
+        const body = (msg && (msg.content || msg.body)) ?? "";
+        addMessage(who, body);
+      });
+
+      socket.on(P.ERROR, (err) => addMessage("system", "error: " + JSON.stringify(err), "system"));
+
+      socket.on("disconnect", () => {
+        status("disconnected");
+        setConnected(false);
+      });
+    }
+
+    function disconnect() {
+      if (socket) { socket.disconnect(); socket = null; }
+      setConnected(false);
+      status("disconnected");
+    }
+
+    function send() {
+      const text = $("text").value.trim();
+      if (!text || !socket) return;
+      // Emit a chat message using the protocol event name (no string literals).
+      socket.emit(P.MESSAGE, { content: text });
+      $("text").value = "";
+    }
+
+    $("connect").addEventListener("click", connect);
+    $("disconnect").addEventListener("click", disconnect);
+    $("send").addEventListener("click", send);
+    $("text").addEventListener("keydown", (e) => { if (e.key === "Enter") send(); });
+  </script>
+</body>
+</html>
