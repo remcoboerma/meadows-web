@@ -14,7 +14,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from starlette.applications import Starlette
-from starlette.responses import FileResponse, Response
+from starlette.responses import FileResponse, JSONResponse, Response
 from starlette.routing import Mount
 from starlette.staticfiles import StaticFiles
 
@@ -70,6 +70,16 @@ class WebHost:
             return Response("index.html not found", status_code=404)
         return FileResponse(self.index_path, media_type="text/html")
 
+    def serve_status(self, request) -> Response:
+        """BUSINESS RULE (MEADOWS §2 line 40): meadows-web has no auth surface.
+        The monolith's checkAuthStatus() fetches '/status' to detect Auth0
+        sessions; in MEADOWS, auth is JWT-only via the socket handshake. We
+        return a fixed `{"logged_in": false}` so the client JS falls through
+        to the manual-JWT auth overlay without a console 404 error. This is
+        a compatibility shim for the copied template, not domain logic."""
+        del request  # unused: fixed response, no per-request logic.
+        return JSONResponse({"logged_in": False})
+
     def not_found(self, request) -> Response:
         """BUSINESS RULE: anything that isn't `/` or `/static/*` is a 404. The
         host serves only the chat page and static assets — no API surface."""
@@ -92,6 +102,7 @@ class WebHost:
         ]
         app = Starlette(routes=routes)
         app.router.add_route("/", self.serve_index, methods=["GET"])
+        app.router.add_route("/status", self.serve_status, methods=["GET"])
         app.router.add_route("/{path:path}", self.not_found, methods=["GET"])
         return app
 

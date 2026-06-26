@@ -42,9 +42,13 @@ def test_compute_hash_returns_16_char_hex() -> None:
 
 
 def test_build_replaces_all_template_vars(tmp_path) -> None:
-    """build() must produce a file with NO leftover `{{ ... }}` placeholders —
+    """build() must produce a file with NO leftover `{{ MEADOWS_* }}` placeholders —
     every template var (server url, system name, protocol blob, client hash)
-    replaced."""
+    replaced.
+
+    Note: the template is a full webchat HTML page with JavaScript that naturally
+    contains `}}` in object literal syntax (e.g. `{key: value}}`). We check for
+    unreplaced MEADOWS placeholders specifically, not bare `}}`."""
     out = tmp_path / "index.html"
     path = build(
         server_url="http://example-server:8080",
@@ -56,9 +60,12 @@ def test_build_replaces_all_template_vars(tmp_path) -> None:
     assert out.exists()
     content = out.read_text(encoding="utf-8")
 
-    # No template placeholders may remain.
-    assert "{{" not in content
-    assert "}}" not in content
+    # No MEADOWS template placeholders may remain.
+    assert "{{ MEADOWS" not in content
+    assert "MEADOWS_SERVER_URL }}" not in content
+    assert "MEADOWS_SYSTEM_NAME }}" not in content
+    assert "MEADOWS_PROTOCOL }}" not in content
+    assert "MEADOWS_CLIENT_HASH }}" not in content
 
     # Injected config + protocol constants must be present.
     assert "http://example-server:8080" in content

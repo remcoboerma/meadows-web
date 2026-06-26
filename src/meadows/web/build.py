@@ -94,10 +94,13 @@ def build(
     content = content.replace("{{ MEADOWS_SYSTEM_NAME }}", system_name)
     content = content.replace("{{ MEADOWS_PROTOCOL }}", protocol_json)
 
-    # Cache-busting hash: computed over the rendered content (placeholder literal
-    # is constant, so the hash still flips when real content/config changes).
+    # Cache-busting hash: computed over the rendered content, then injected
+    # as a meta tag before </head> (matching the monolith's build.py pattern).
     client_hash = compute_hash(content)
-    content = content.replace("{{ MEADOWS_CLIENT_HASH }}", client_hash)
+    content = content.replace(
+        "</head>",
+        f'<meta name="meadows-hash" content="{client_hash}"></head>',
+    )
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(content, encoding="utf-8")
