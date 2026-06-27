@@ -2720,7 +2720,7 @@ TECHNICAL FEATURES:
                  const errorEl = document.getElementById('user-invite-error');
                  errorEl.style.display = 'none';
                  
-                 this.socket.emit('request_user_jwt', {
+                 this.socket.emit(MEADOWS_PROTOCOL.REQUEST_USER_JWT, {
                      username: username,
                      permissions: permissions,
                      expiry: expiry
@@ -2761,7 +2761,7 @@ TECHNICAL FEATURES:
                  const errorEl = document.getElementById('bot-invite-error');
                  errorEl.style.display = 'none';
                  
-                 this.socket.emit('request_bot_jwt', {
+                 this.socket.emit(MEADOWS_PROTOCOL.REQUEST_BOT_JWT, {
                      bot_name: botname,
                      permissions: permissions,
                      expiry: expiry
@@ -2873,7 +2873,7 @@ TECHNICAL FEATURES:
                      this.isConnected = false;
                  });
                 
-                 this.socket.on('authenticated', (data) => {
+                 this.socket.on(MEADOWS_PROTOCOL.AUTHENTICATED, (data) => {
                        const newUserId = data.user_id;
                        const userIdChanged = this.previousUserId !== null && this.previousUserId !== newUserId;
                        if (userIdChanged) {
@@ -2914,7 +2914,7 @@ TECHNICAL FEATURES:
                            }
                        }
                        
-                         this.socket.emit('list_groups', {});
+                         this.socket.emit(MEADOWS_PROTOCOL.LIST_GROUPS, {});
                          // Load ntfy prefs from server on every (re)authentication.
                          // Called after list_groups — both load in parallel, no dependency.
                          // If user has never set prefs, server returns defaults and modal
@@ -2923,7 +2923,7 @@ TECHNICAL FEATURES:
                         console.log('[WebChat] ✓ Fully initialised — user:', this.currentUsername, '| groups:', Object.keys(this.groups).length);
                     });
                  
-                 this.socket.on('auth_error', (data) => {
+                 this.socket.on(MEADOWS_PROTOCOL.AUTH_ERROR, (data) => {
                       this.updateStatus('error', 'Auth error: ' + data.error);
                       this.deleteCookie(this.cookieName);
                       alert('Authentication failed: ' + data.error);
@@ -2942,7 +2942,7 @@ TECHNICAL FEATURES:
                    * 
                    * UX: Displays token in modal with copy functionality.
                    */
-                  this.socket.on('user_jwt_generated', (data) => {
+                  this.socket.on(MEADOWS_PROTOCOL.USER_JWT_GENERATED, (data) => {
                       this.showJwtResult('user', data);
                   });
                   
@@ -2952,7 +2952,7 @@ TECHNICAL FEATURES:
                    * SERVER RESPONSE: Same as user_jwt_generated but with
                    * 'bot_name' instead of 'username'.
                    */
-                  this.socket.on('bot_jwt_generated', (data) => {
+                  this.socket.on(MEADOWS_PROTOCOL.BOT_JWT_GENERATED, (data) => {
                       this.showJwtResult('bot', data);
                   });
                   
@@ -2965,13 +2965,13 @@ TECHNICAL FEATURES:
                    * 
                    * Can be triggered by client via 'get_my_permissions' event.
                    */
-                  this.socket.on('my_permissions', (data) => {
+                  this.socket.on(MEADOWS_PROTOCOL.MY_PERMISSIONS, (data) => {
                       this.permissions = data.permissions || [];
                       this.availablePermissions = data.available_permissions || [];
                       this.updatePermissionsDropdown();
                   });
                   
-                    this.socket.on('group_list', (data) => {
+                    this.socket.on(MEADOWS_PROTOCOL.GROUP_LIST, (data) => {
                       this.groups = {};
                       data.groups.forEach(g => {
                           this.groups[g.id] = g;
@@ -2989,18 +2989,18 @@ TECHNICAL FEATURES:
                      }
                  });
                 
-                 this.socket.on('group_created', (group) => {
+                 this.socket.on(MEADOWS_PROTOCOL.GROUP_CREATED, (group) => {
                      this.groups[group.id] = group;
                      this.renderGroups();
                      const groupCountEl = document.getElementById('group-count');
                      if (groupCountEl) groupCountEl.textContent = '(' + Object.keys(this.groups).length + ')';
                  });
                 
-                this.socket.on('join_group', (data) => {
-                    this.socket.emit('join_group', { group_id: data.group_id });
+                this.socket.on(MEADOWS_PROTOCOL.JOIN_GROUP, (data) => {
+                    this.socket.emit(MEADOWS_PROTOCOL.JOIN_GROUP, { group_id: data.group_id });
                 });
                 
-                  this.socket.on('joined_group', (data) => {
+                  this.socket.on(MEADOWS_PROTOCOL.JOINED_GROUP, (data) => {
                       this.currentGroup = data.group_id;
                       this.messages[data.group_id] = data.thread || [];
                       
@@ -3027,7 +3027,7 @@ TECHNICAL FEATURES:
                        this.renderUsers();
                    });
                  
-                   this.socket.on('left_group', (data) => {
+                   this.socket.on(MEADOWS_PROTOCOL.LEFT_GROUP, (data) => {
                        if (this.currentGroup === data.group_id) {
                            this.currentGroup = null;
                            localStorage.removeItem('lastGroupId');
@@ -3040,7 +3040,7 @@ TECHNICAL FEATURES:
                        }
                    });
                   
-                   this.socket.on('group_deleted', (data) => {
+                   this.socket.on(MEADOWS_PROTOCOL.GROUP_DELETED, (data) => {
                        // Group was deleted - remove it from local state
                        delete this.groups[data.group_id];
                        delete this.messages[data.group_id];
@@ -3060,7 +3060,7 @@ TECHNICAL FEATURES:
                       this.debug(2, 'Group', `Group ${data.group_id} was deleted`);
                   });
                  
-                  this.socket.on('message', (message) => {
+                  this.socket.on(MEADOWS_PROTOCOL.MESSAGE, (message) => {
                      if (!this.messages[message.group_id]) {
                          this.messages[message.group_id] = [];
                      }
@@ -3074,7 +3074,7 @@ TECHNICAL FEATURES:
                      }
                  });
                 
-                  this.socket.on('user_joined', (data) => {
+                  this.socket.on(MEADOWS_PROTOCOL.USER_JOINED, (data) => {
                       if (data.group_id === this.currentGroup) {
                           // Update user list when someone joins current group
                           this.renderUsers();
@@ -3085,7 +3085,7 @@ TECHNICAL FEATURES:
                       }
                   });
                   
-                    this.socket.on('user_left', (data) => {
+                    this.socket.on(MEADOWS_PROTOCOL.USER_LEFT, (data) => {
                         if (data.group_id === this.currentGroup) {
                             this.renderUsers();
                         }
@@ -3101,7 +3101,7 @@ TECHNICAL FEATURES:
                         }
                     });
 
-                   this.socket.on('user_typing', (data) => {
+                   this.socket.on(MEADOWS_PROTOCOL.USER_TYPING, (data) => {
                        const indicator = document.getElementById('typing-indicator');
                        const label = document.getElementById('typing-label');
                        if (!indicator || !label) return;
@@ -3116,7 +3116,7 @@ TECHNICAL FEATURES:
                        }, 3000);
                    });
 
-                  this.socket.on('members_updated', (data) => {
+                  this.socket.on(MEADOWS_PROTOCOL.MEMBERS_UPDATED, (data) => {
                       // Update the members list for the group
                       if (this.groups[data.group_id]) {
                           this.groups[data.group_id].members = data.members;
@@ -3129,23 +3129,23 @@ TECHNICAL FEATURES:
                       }
                   });
                  
-                 this.socket.on('bot_list', (data) => {
+                 this.socket.on(MEADOWS_PROTOCOL.BOT_LIST, (data) => {
                     this.bots = data.bots;
                     this.renderBots();
                 });
                 
-                this.socket.on('bot_not_found', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.BOT_NOT_FOUND, (data) => {
                     if (this.currentGroup) {
                         this.addSystemMessage(this.currentGroup, 
                             `Bot "${data.bot_name}" not found. ${data.message}`, 'warning');
                     }
                 });
                 
-                this.socket.on('error', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.ERROR, (data) => {
                     console.error('Socket error:', data);
                 });
 
-                this.socket.on('form_submission', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.FORM_SUBMISSION, (data) => {
                     const showConfirmation = localStorage.getItem('showFormConfirmations') === 'true';
                     if (!showConfirmation) return;
                     if (!this.messages[data.group_id]) {
@@ -3158,11 +3158,11 @@ TECHNICAL FEATURES:
                 });
 
                 // Ntfy prefs
-                this.socket.on('ntfy_prefs', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.NTFY_PREFS, (data) => {
                     this.ntfyPrefs = data;
                 });
 
-                this.socket.on('ntfy_prefs_saved', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.NTFY_PREFS_SAVED, (data) => {
                     const statusEl = document.getElementById('ntfy-status');
                     statusEl.textContent = 'Instellingen opgeslagen!';
                     statusEl.className = 'ntfy-status success';
@@ -3175,7 +3175,7 @@ TECHNICAL FEATURES:
                 // reaction_removed_event (explicit removal).
                 // reaction_toggled is the authoritative event for toggle state — handles
                 // both add and remove. reaction_removed_event is for explicit removal.
-                this.socket.on('reaction_added', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.REACTION_ADDED, (data) => {
                     if (!this.reactions[data.group_id]) this.reactions[data.group_id] = {};
                     const targetId = data.target_message_id;
                     if (!this.reactions[data.group_id][targetId]) this.reactions[data.group_id][targetId] = {};
@@ -3188,7 +3188,7 @@ TECHNICAL FEATURES:
                     }
                 });
 
-                this.socket.on('reaction_toggled', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.REACTION_TOGGLED, (data) => {
                     if (!this.reactions[data.group_id]) this.reactions[data.group_id] = {};
                     const targetId = data.target_message_id;
                     if (!this.reactions[data.group_id][targetId]) this.reactions[data.group_id][targetId] = {};
@@ -3206,7 +3206,7 @@ TECHNICAL FEATURES:
                     }
                 });
 
-                this.socket.on('reaction_toggled', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.REACTION_TOGGLED, (data) => {
                     if (!this.reactions[data.group_id]) this.reactions[data.group_id] = {};
                     const targetId = data.target_message_id;
                     if (!this.reactions[data.group_id][targetId]) this.reactions[data.group_id][targetId] = {};
@@ -3224,7 +3224,7 @@ TECHNICAL FEATURES:
                     }
                 });
 
-                this.socket.on('reaction_removed_event', (data) => {
+                this.socket.on(MEADOWS_PROTOCOL.REACTION_REMOVED, (data) => {
                     if (this.reactions[data.group_id] && this.reactions[data.group_id][data.target_message_id]) {
                         const emojiMap = this.reactions[data.group_id][data.target_message_id];
                         if (emojiMap[data.emoji]) {
@@ -3263,7 +3263,7 @@ TECHNICAL FEATURES:
 
                     const showConfirmation = localStorage.getItem('showFormConfirmations') === 'true';
 
-                    this.socket.emit('form_submission', {
+                    this.socket.emit(MEADOWS_PROTOCOL.FORM_SUBMISSION, {
                         form_data: data,
                         form_id: formId,
                         reply_to: messageId,
@@ -3305,7 +3305,7 @@ TECHNICAL FEATURES:
                     this.debug(1, 'Auth', `Authenticating with token (${tokenPreview}), current user: '${this.userId || 'none'}'`);
                     this.setCookie(this.cookieName, token, 7);
                     this.debug(1, 'Auth', `Emitting authenticate event to server`);
-                    this.socket.emit('authenticate', { token });
+                    this.socket.emit(MEADOWS_PROTOCOL.AUTHENTICATE, { token });
                 } else {
                     this.debug(1, 'Auth', 'ERROR: Token field is empty, cannot authenticate');
                 }
@@ -3327,7 +3327,7 @@ TECHNICAL FEATURES:
                         return;
                     }
                     
-                    this.socket.emit('create_group', {
+                    this.socket.emit(MEADOWS_PROTOCOL.CREATE_GROUP, {
                         group_id: groupId,
                         name: name,
                         description: ''
@@ -3340,19 +3340,19 @@ TECHNICAL FEATURES:
                  this.debug(2, 'Group', `Joining group '${groupId}' as user '${this.userId}'`);
                  // REQUIREMENT: Clear mention highlight when user opens the group
                  this.groupsWithNewMentions.delete(groupId);
-                 this.socket.emit('join_group', { group_id: groupId });
+                 this.socket.emit(MEADOWS_PROTOCOL.JOIN_GROUP, { group_id: groupId });
              }
             
             leaveCurrentGroup() {
                 if (this.currentGroup) {
                     this.debug(2, 'Group', `Leaving current group '${this.currentGroup}' (user '${this.userId}')`);
-                    this.socket.emit('leave_group', { group_id: this.currentGroup });
+                    this.socket.emit(MEADOWS_PROTOCOL.LEAVE_GROUP, { group_id: this.currentGroup });
                 }
             }
             
              leaveGroup(groupId) {
                  this.debug(2, 'Group', `Leaving group '${groupId}' as user '${this.userId}'`);
-                 this.socket.emit('leave_group', { group_id: groupId });
+                 this.socket.emit(MEADOWS_PROTOCOL.LEAVE_GROUP, { group_id: groupId });
              }
              
              /*
@@ -3411,7 +3411,7 @@ TECHNICAL FEATURES:
                   
                   if (input.value === groupName) {
                       this.debug(2, 'Group', `Deleting group '${this.deleteGroupId}'`);
-                      this.socket.emit('delete_group', { group_id: this.deleteGroupId });
+                      this.socket.emit(MEADOWS_PROTOCOL.DELETE_GROUP, { group_id: this.deleteGroupId });
                       this.cancelDeleteGroup();
                   }
               }
@@ -3518,7 +3518,7 @@ TECHNICAL FEATURES:
                   this.debug(2, 'Export', `Sending export command: ${command}`);
                   
                   // Send to export bot
-                  this.socket.emit('message', {
+                  this.socket.emit(MEADOWS_PROTOCOL.MESSAGE, {
                       group_id: this.currentGroup,
                       content: command
                   });
@@ -3551,7 +3551,7 @@ TECHNICAL FEATURES:
                            };
                        }
 
-                      this.socket.emit('message', messagePayload);
+                      this.socket.emit(MEADOWS_PROTOCOL.MESSAGE, messagePayload);
                       this.stopTyping();
 
                       // Track sent message in history (newest at end)
@@ -3571,7 +3571,7 @@ TECHNICAL FEATURES:
                   const now = Date.now();
                   if (this.lastTypingEmit && now - this.lastTypingEmit < 2000) return;
                   this.lastTypingEmit = now;
-                  this.socket.emit('typing', {group_id: this.currentGroup});
+                  this.socket.emit(MEADOWS_PROTOCOL.TYPING, {group_id: this.currentGroup});
               }
 
               stopTyping() {
@@ -3910,7 +3910,7 @@ TECHNICAL FEATURES:
                      this.debug(2, 'Message', `Marked message ${messageId} as removed`);
                      
                      // Emit removal to server
-                     this.socket.emit('remove_message', {
+                     this.socket.emit(MEADOWS_PROTOCOL.REMOVE_MESSAGE, {
                          group_id: this.currentGroup,
                          message_id: messageId
                      });
@@ -4717,12 +4717,12 @@ TECHNICAL FEATURES:
                       return;
                   }
 
-                  this.socket.emit('save_ntfy_prefs', { enabled, server_url, topic, auth_token });
+                  this.socket.emit(MEADOWS_PROTOCOL.SAVE_NTFY_PREFS, { enabled, server_url, topic, auth_token });
               }
 
               loadNtfyPrefs() {
                   // TECHNICAL: Fire-and-forget emit. Response arrives via 'ntfy_prefs' socket handler.
-                  this.socket.emit('get_ntfy_prefs', {});
+                  this.socket.emit(MEADOWS_PROTOCOL.GET_NTFY_PREFS, {});
               }
 
               /* Emoji Reactions
@@ -4813,7 +4813,7 @@ TECHNICAL FEATURES:
 
                    this.updateReactionBadge(targetMessageId, emoji);
 
-                   this.socket.emit('add_reaction', {
+                   this.socket.emit(MEADOWS_PROTOCOL.ADD_REACTION, {
                        target_message_id: targetMessageId,
                        emoji: emoji,
                        group_id: gid,
