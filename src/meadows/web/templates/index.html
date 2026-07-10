@@ -3250,10 +3250,10 @@ TECHNICAL FEATURES:
 
                 container.addEventListener('submit', (event) => {
                     const form = event.target.closest('form');
-                    if (!form) { console.log('[FormDebug] no form found'); return; }
+                    if (!form) return;
 
                     const messageDiv = form.closest('.message');
-                    if (!messageDiv) { console.log('[FormDebug] no messageDiv found'); return; }
+                    if (!messageDiv) return;
 
                     event.preventDefault();
 
@@ -3263,11 +3263,10 @@ TECHNICAL FEATURES:
                     const formContainer = form.closest('.embedded-form');
                     const formId = formContainer ? formContainer.dataset.formId : form.id || 'unknown';
 
-                    console.log('[FormDebug] submit caught', { messageId, formId, data });
-
+                    // BUSINESS RULE (MEADOWS-forms-intent §2.8): read answer_label
+                    // from the original message's metadata and place it as a label
+                    // on the submission. Response data goes in metadata.
                     const originalMsg = this._findMessageById(messageId);
-                    console.log('[FormDebug] originalMsg found:', !!originalMsg, originalMsg ? { id: originalMsg.id, hasMetadata: !!originalMsg.metadata, metadata: originalMsg.metadata } : null);
-
                     let answerLabel = null;
                     if (originalMsg && originalMsg.metadata && originalMsg.metadata.meadows
                         && originalMsg.metadata.meadows.form_handling
@@ -3275,8 +3274,7 @@ TECHNICAL FEATURES:
                         answerLabel = originalMsg.metadata.meadows.form_handling.answer_label;
                     }
 
-                    console.log('[FormDebug] answerLabel:', answerLabel);
-
+                    // Build the submission event data
                     const submissionData = {
                         form_data: data,
                         form_id: formId,
@@ -3285,11 +3283,11 @@ TECHNICAL FEATURES:
                         source: 'form_submission',
                     };
 
+                    // Include answer_label if available from metadata
                     if (answerLabel) {
                         submissionData.answer_label = answerLabel;
                     }
 
-                    console.log('[FormDebug] emitting form_submission:', submissionData);
                     this.socket.emit(MEADOWS_PROTOCOL.FORM_SUBMISSION, submissionData);
 
                     const summaryParts = Object.entries(data).map(([k, v]) => `${k} = "${v}"`).join(', ');
