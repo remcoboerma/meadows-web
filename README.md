@@ -5,6 +5,17 @@
 > Socket.IO connection runs browser→meadows-server, NOT via this Python webserver.
 > See `MEADOWS-migration-intent.md` section 2 line 40 and section 4 line 115.
 
+## Architecture
+
+```mermaid
+graph LR
+    B[Browser<br>JS] -->|Socket.IO| S[meadows-server<br>:8080]
+    B -->|HTTP| W[meadows-web<br>:8081]
+    W -.->|static files only| B
+```
+
+The browser connects directly to `meadows-server` via Socket.IO. This Python server is just a file host.
+
 ## What this package contains
 
 - `app.py` — the Starlette ASGI app. Serves `/` → `dist/index.html` and `/static/*` → assets. Nothing else.
