@@ -2910,7 +2910,7 @@ TECHNICAL FEATURES:
                        
                        // REQUIREMENT: Check if client code is outdated (server has newer code)
                        if (data.client_hash) {
-                           const embeddedHash = document.querySelector('meta[name="webchat-hash"]')?.content;
+                           const embeddedHash = document.querySelector('meta[name="meadows-hash"]')?.content;
                            if (embeddedHash && embeddedHash !== data.client_hash) {
                                this.showUpdateNotification();
                            }
