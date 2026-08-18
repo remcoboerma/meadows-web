@@ -501,6 +501,7 @@ wheels = [
 
 [[package]]
 name = "meadows-protocol"
+version = "0.1.0"
 source = { editable = "../meadows-protocol" }
 dependencies = [
     { name = "pydantic" },

@@ -48,6 +48,7 @@ def setup(c: Context) -> None:
     # Traefik routing parameters (section 4 line 115: TLS via Traefik labels).
     _check_env("PROJECT", default="meadows", comment="Traefik router prefix")
     _check_env("HOSTINGDOMAIN", default="localhost", comment="Traefik host domain")
+    _check_env("ROUTER_HOST", default="", comment="Full Traefik host rule; empty = chat.$HOSTINGDOMAIN")
 
 
 @task

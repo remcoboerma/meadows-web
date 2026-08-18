@@ -27,7 +27,7 @@ services:
         max-file: "5"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.rule=Host(`chat.${HOSTINGDOMAIN:-localhost}`)"
+      - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.rule=Host(`${ROUTER_HOST:-chat.${HOSTINGDOMAIN:-localhost}}`)"
       - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.tls=true"
       - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.entrypoints=web-secured"
       - "traefik.http.routers.${PROJECT:-meadows}-meadows-web-secure.tls.certresolver=letsencrypt"
