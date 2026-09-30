@@ -45,6 +45,22 @@ uv run python -m meadows.web
 uv run uvicorn meadows.web.app:app --host 0.0.0.0 --port 8081
 ```
 
+### Run with Docker (self-hosted front-end)
+
+Built from the repo root (so `../meadows-protocol` resolves — see `Dockerfile`)
+and tagged `remcoboerma/meadows-web`. The image renders the template on every
+container start, so the Socket.IO hostname is taken from the run-time env:
+
+```bash
+docker compose build          # or: ew build
+docker run -d -p 8081:8081 \
+  -e MEADOWS_SERVER_URL=http://chat.example.com remcoboerma/meadows-web
+```
+
+Then open <http://localhost:8081> — the page opens its own Socket.IO connection
+straight to `MEADOWS_SERVER_URL` (browser → meadows-server, never through this
+host). `MEADOWS_SYSTEM_NAME` is injected the same way.
+
 ## Test
 
 ```bash
