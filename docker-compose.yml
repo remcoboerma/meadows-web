@@ -1,3 +1,11 @@
+# meadows-web front-end host. Also usable standalone instead of the hosted one:
+#
+#   docker run -d -p 8081:8081 \
+#     -e MEADOWS_SERVER_URL=http://chat.example.com remcoboerma/meadows-web
+#
+# MEADOWS_SERVER_URL is injected into index.html at container start (the image
+# CMD runs `python -m meadows.web.build` first); the browser then opens its own
+# Socket.IO connection straight to that URL.
 networks:
   meadows:
     driver: bridge
@@ -7,8 +15,13 @@ networks:
 
 services:
   meadows-web:
-    build: .
-    image: meadows-web:latest
+    # Context is the repo root: pyproject.toml's [tool.uv.sources] points at
+    # ../meadows-protocol, so the sibling must be part of the build context
+    # (see Dockerfile).
+    build:
+      context: ..
+      dockerfile: meadows-web/Dockerfile
+    image: remcoboerma/meadows-web
     restart: unless-stopped
     environment:
       - MEADOWS_WEB_HOST=${MEADOWS_WEB_HOST:-0.0.0.0}
